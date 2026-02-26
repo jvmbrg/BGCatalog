@@ -3,6 +3,7 @@ package com.devbraga.bgcatalog.services;
 import com.devbraga.bgcatalog.dto.CategoryDTO;
 import com.devbraga.bgcatalog.entities.Category;
 import com.devbraga.bgcatalog.repositories.CategoryRepository;
+import com.devbraga.bgcatalog.services.exceptions.ResourceNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,13 @@ public class CategoryService {
         result = categoryRepository.findAll();
 
         return result.stream().map(x -> new CategoryDTO(x)).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public CategoryDTO findById(Long id){
+        Category category = categoryRepository.findById(id).orElseThrow(
+                () -> new ResourceNotFoundException("Recurso não encontrado"));
+        return new CategoryDTO(category);
     }
 
 }
