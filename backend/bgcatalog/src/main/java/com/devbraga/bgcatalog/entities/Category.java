@@ -2,6 +2,8 @@ package com.devbraga.bgcatalog.entities;
 
 import jakarta.persistence.*;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -11,6 +13,7 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique = true)
     private String name;
 
     public Category(){}
@@ -34,6 +37,7 @@ public class Category {
     public void setName(String name) {
         this.name = name;
     }
+
 
     @Override
     public boolean equals(Object o) {

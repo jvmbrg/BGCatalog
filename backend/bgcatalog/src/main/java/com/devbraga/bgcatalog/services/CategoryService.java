@@ -2,16 +2,21 @@ package com.devbraga.bgcatalog.services;
 
 import com.devbraga.bgcatalog.dto.CategoryDTO;
 import com.devbraga.bgcatalog.entities.Category;
+import com.devbraga.bgcatalog.entities.CategoryLog;
+import com.devbraga.bgcatalog.enuns.OperationType;
+import com.devbraga.bgcatalog.repositories.CategoryLogRepository;
 import com.devbraga.bgcatalog.repositories.CategoryRepository;
 import com.devbraga.bgcatalog.services.exceptions.DatabaseException;
 import com.devbraga.bgcatalog.services.exceptions.ResourceNotFoundException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,6 +25,9 @@ public class CategoryService {
 
     @Autowired
     private CategoryRepository categoryRepository;
+
+    @Autowired
+    private CategoryLogRepository categoryLogRepository;
 
     @Transactional(readOnly = true)
     public List<CategoryDTO> findAll(){
@@ -37,10 +45,23 @@ public class CategoryService {
 
     @Transactional
     public CategoryDTO insert(CategoryDTO dto){
-        Category entity = new Category();
-        copyDtoToEntity(dto, entity);
-        entity = categoryRepository.save(entity);
-        return new CategoryDTO(entity);
+        try{
+            Category entity = new Category();
+            copyDtoToEntity(dto, entity);
+            entity = categoryRepository.save(entity);
+
+            CategoryLog log = new CategoryLog();
+            log.setMoment(Instant.now());
+            log.setOperationType(OperationType.CREATE);
+            log.setCategory(entity);
+            categoryLogRepository.save(log);
+
+
+            return new CategoryDTO(entity);
+        }catch (DataIntegrityViolationException e){
+            throw new DatabaseException("Não é possivel inserir duas categorais com o mesmo nome");
+        }
+
     }
 
     @Transactional
@@ -49,6 +70,13 @@ public class CategoryService {
             Category entity = categoryRepository.getReferenceById(id);
             copyDtoToEntity(dto,entity);
             entity = categoryRepository.save(entity);
+
+            CategoryLog log = new CategoryLog();
+            log.setMoment(Instant.now());
+            log.setOperationType(OperationType.UPDATE);
+            log.setCategory(entity);
+            categoryLogRepository.save(log);
+
             return new CategoryDTO(entity);
         } catch (EntityNotFoundException e){
             throw new ResourceNotFoundException("Recurso não encontrado");
@@ -69,6 +97,8 @@ public class CategoryService {
         }
 
     }
+
+
 
     public void copyDtoToEntity(CategoryDTO dto, Category entity){
         entity.setName(dto.getName());
