@@ -5,6 +5,7 @@ import com.devbraga.bgcatalog.entities.Category;
 import com.devbraga.bgcatalog.repositories.CategoryRepository;
 import com.devbraga.bgcatalog.services.exceptions.DatabaseException;
 import com.devbraga.bgcatalog.services.exceptions.ResourceNotFoundException;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,6 @@ public class CategoryService {
     public List<CategoryDTO> findAll(){
         List<Category> result = new ArrayList<>();
         result = categoryRepository.findAll();
-
         return result.stream().map(x -> new CategoryDTO(x)).toList();
     }
 
@@ -33,6 +33,26 @@ public class CategoryService {
         Category category = categoryRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("Recurso não encontrado"));
         return new CategoryDTO(category);
+    }
+
+    @Transactional
+    public CategoryDTO insert(CategoryDTO dto){
+        Category entity = new Category();
+        copyDtoToEntity(dto, entity);
+        entity = categoryRepository.save(entity);
+        return new CategoryDTO(entity);
+    }
+
+    @Transactional
+    public CategoryDTO update(Long id, CategoryDTO dto){
+        try{
+            Category entity = categoryRepository.getReferenceById(id);
+            copyDtoToEntity(dto,entity);
+            entity = categoryRepository.save(entity);
+            return new CategoryDTO(entity);
+        } catch (EntityNotFoundException e){
+            throw new ResourceNotFoundException("Recurso não encontrado");
+        }
     }
 
     @Transactional(propagation = Propagation.SUPPORTS)
@@ -48,6 +68,10 @@ public class CategoryService {
             throw new DatabaseException("Falha de integridade referencial");
         }
 
+    }
+
+    public void copyDtoToEntity(CategoryDTO dto, Category entity){
+        entity.setName(dto.getName());
     }
 
 }
