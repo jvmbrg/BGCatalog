@@ -5,7 +5,9 @@ import com.devbraga.bgcatalog.services.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.List;
 
 @RestController
@@ -23,6 +25,21 @@ public class CategoryResource {
     @GetMapping(value = "/{id}")
     public ResponseEntity<CategoryDTO> findById(@PathVariable Long id){
         return ResponseEntity.ok(categoryService.findById(id));
+    }
+
+    @PostMapping(value = "/add")
+    public ResponseEntity<CategoryDTO> insert(@RequestBody CategoryDTO dto){
+
+        dto = categoryService.insert(dto);
+
+        //Boas práticas para criar um URI e passar como parâmetro ao ResponseEntity
+        URI uri = ServletUriComponentsBuilder.
+                fromCurrentRequest().
+                path("/{id}").
+                buildAndExpand(dto.getId()).
+                toUri();
+
+        return ResponseEntity.created(uri).body(dto);
     }
 
     @DeleteMapping(value = "/delete/{id}")
